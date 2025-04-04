@@ -10,11 +10,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+import projetPj.rhum_a_ranger.TestSecurityConfig;
 import projetPj.rhum_a_ranger.rhum.Rhum;
 import projetPj.rhum_a_ranger.rhum.RhumController;
 import projetPj.rhum_a_ranger.rhum.RhumService;
@@ -31,6 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(RhumController.class)
+@Import(TestSecurityConfig.class)
 @AutoConfigureMockMvc
 @WithMockUser
 public class RhumControllerTest {
@@ -88,11 +90,11 @@ public class RhumControllerTest {
         mockMvc.perform(get("/api/rhums"))
                 .andDo(MockMvcResultHandlers.print()) // Afficher les détails de la réponse
                 .andExpect(status().isOk())
-                .andExpect((ResultMatcher) jsonPath("$", hasSize(2), "La liste devrait contenir 2 rhums"))
+                .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].id", is(1)))
-                .andExpect(jsonPath("$[0].nom", is("Clement")))
+                .andExpect(jsonPath("$[0].name", is("Clement")))
                 .andExpect(jsonPath("$[1].id", is(2)))
-                .andExpect(jsonPath("$[1].nom", is("Diplomatico")));
+                .andExpect(jsonPath("$[1].name", is("Diplomatico")));
 
         verify(rhumService, times(1)).getAllRhums();
     }
@@ -107,8 +109,8 @@ public class RhumControllerTest {
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.nom", is("Clement")))
-                .andExpect(jsonPath("$.origine", is("Martinique")));
+                .andExpect(jsonPath("$.name", is("Clement")))
+                .andExpect(jsonPath("$.origin", is("Martinique")));
 
         verify(rhumService, times(1)).getRhumById(1L);
     }
@@ -134,22 +136,23 @@ public class RhumControllerTest {
                         .content(objectMapper.writeValueAsString(rhum1)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.nom", is("Clement")));
+                .andExpect(jsonPath("$.name", is("Clement")));
 
         verify(rhumService, times(1)).saveRhum(any(Rhum.class));
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void updateRhum_shouldUpdateRhum_whenRhumExists() throws Exception {
         when(rhumService.updateRhum(eq(1L), any(Rhum.class))).thenReturn(rhum1);
 
         mockMvc.perform(put("/api/rhums/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rhum1)))
-
+                        
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.nom", is("Clement")));
+                .andExpect(jsonPath("$.name", is("Clement")));
 
         verify(rhumService, times(1)).updateRhum(eq(1L), any(Rhum.class));
     }
@@ -184,10 +187,10 @@ public class RhumControllerTest {
         List<Rhum> martinique = Arrays.asList(rhum1);
         when(rhumService.getRhumsByOrigin("Martinique")).thenReturn(martinique);
 
-        mockMvc.perform(get("/api/rhums/origine/{origine}", "Martinique"))
+        mockMvc.perform(get("/api/rhums/origin/{origin}", "Martinique"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].origine", is("Martinique")));
+                .andExpect(jsonPath("$[0].origin", is("Martinique")));
 
         verify(rhumService, times(1)).getRhumsByOrigin("Martinique");
     }
@@ -201,7 +204,7 @@ public class RhumControllerTest {
         mockMvc.perform(get("/api/rhums/search").param("keyword", "Diplo"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].nom", is("Diplomatico")));
+                .andExpect(jsonPath("$[0].name", is("Diplomatico")));
 
         verify(rhumService, times(1)).searchRhumsByName("Diplo");
     }
