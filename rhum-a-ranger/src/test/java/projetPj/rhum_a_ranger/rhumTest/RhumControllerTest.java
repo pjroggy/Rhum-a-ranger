@@ -173,7 +173,7 @@ public class RhumControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void deleteRhum_shouldDeleteRhum() throws Exception {
-        doNothing().when(rhumService).deleteRhum(anyLong());
+        when(rhumService.deleteRhum(anyLong())).thenReturn(true);
 
         mockMvc.perform(delete("/api/rhums/{id}", 1L))
                 .andExpect(status().isNoContent());
