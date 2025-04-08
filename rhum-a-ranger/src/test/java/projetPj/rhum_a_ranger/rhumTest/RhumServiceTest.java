@@ -39,7 +39,7 @@ public class RhumServiceTest {
         rhum1.setOrigin("Martinique");
         rhum1.setDescription("Rhum agricole");
         rhum1.setAlcoholDegree("40");
-        rhum1.setYear(2018);
+        rhum1.setAge(2018);
 
         rhum2 = new Rhum();
         rhum2.setId(2L);
@@ -47,7 +47,7 @@ public class RhumServiceTest {
         rhum2.setOrigin("Venezuela");
         rhum2.setDescription("Rhum traditionnel");
         rhum2.setAlcoholDegree("43");
-        rhum2.setYear(2010);
+        rhum2.setAge(2010);
     }
 
     @Test
@@ -155,7 +155,7 @@ public class RhumServiceTest {
         rhumToUpdate.setOrigin("Martinique");
         rhumToUpdate.setDescription("Rhum agricole vieilli");
         rhumToUpdate.setAlcoholDegree("42");
-        rhumToUpdate.setYear(2015);
+        rhumToUpdate.setAge(2015);
 
         when(rhumRepository.findById(1L)).thenReturn(Optional.of(rhum1));
         when(rhumRepository.save(any(Rhum.class))).thenAnswer(invocation -> invocation.getArgument(0));

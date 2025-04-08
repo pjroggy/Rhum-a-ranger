@@ -69,7 +69,7 @@ public class RhumControllerTest {
         rhum1.setOrigin("Martinique");
         rhum1.setDescription("Rhum agricole");
         rhum1.setAlcoholDegree("40");
-        rhum1.setYear(2018);
+        rhum1.setAge(2018);
 
         rhum2 = new Rhum();
         rhum2.setId(2L);
@@ -77,7 +77,7 @@ public class RhumControllerTest {
         rhum2.setOrigin("Venezuela");
         rhum2.setDescription("Rhum traditionnel");
         rhum2.setAlcoholDegree("43");
-        rhum2.setYear(2010);
+        rhum2.setAge(2010);
     }
 
     @Test

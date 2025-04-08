@@ -24,8 +24,12 @@ public class RhumService {
         return rhumRepository.save(rhum);
     }
 
-    public void deleteRhum(Long id) {
-        rhumRepository.deleteById(id);
+    public boolean deleteRhum(Long id) {
+        if (rhumRepository.existsById(id)) {
+            rhumRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 
     public List<Rhum> getRhumsByOrigin(String origin) {
@@ -43,7 +47,7 @@ public class RhumService {
                     existingRhum.setOrigin(rhumDetails.getOrigin());
                     existingRhum.setDescription(rhumDetails.getDescription());
                     existingRhum.setPicture(rhumDetails.getPicture());
-                    existingRhum.setYear(rhumDetails.getYear());
+                    existingRhum.setAge(rhumDetails.getAge());
                     existingRhum.setAlcoholDegree(rhumDetails.getAlcoholDegree());
                     return rhumRepository.save(existingRhum);
                 })

@@ -41,9 +41,9 @@ public class RhumController {
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteRhum(@PathVariable Long id) {
-        rhumService.deleteRhum(id);
+    public ResponseEntity<Void> deleteRhum(@PathVariable Long id) {
+        boolean deleted = rhumService.deleteRhum(id);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/origin/{origin}")
