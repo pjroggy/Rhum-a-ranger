@@ -1,11 +1,11 @@
 package projetPj.rhum_a_ranger.rhum;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/rhums")
@@ -15,44 +15,46 @@ public class RhumController {
     private final RhumService rhumService;
 
     @GetMapping
-    public List<Rhum> getAllRhums() {
+    public List<RhumDto> getAllRhums() {
         return rhumService.getAllRhums();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Rhum> getRhumById(@PathVariable Long id) {
+    public ResponseEntity<RhumDto> getRhumById(@PathVariable Long id) {
         return rhumService.getRhumById(id)
-                .map(rhum -> ResponseEntity.ok().body(rhum))
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Rhum createRhum(@RequestBody Rhum rhum) {
-        return rhumService.saveRhum(rhum);
+    public ResponseEntity<RhumDto> createRhum(@RequestBody RhumDto rhumDto) {
+        RhumDto saved = rhumService.saveRhum(rhumDto);
+        return ResponseEntity.status(201).body(saved);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Rhum> updateRhum(@PathVariable Long id, @RequestBody Rhum rhum) {
-        Rhum updatedRhum = rhumService.updateRhum(id, rhum);
-        return updatedRhum != null ?
-                ResponseEntity.ok(updatedRhum) :
-                ResponseEntity.notFound().build();
+    public ResponseEntity<RhumDto> updateRhum(@PathVariable Long id, @RequestBody RhumDto rhumDto) {
+        try {
+            RhumDto updated = rhumService.updateRhum(id, rhumDto);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRhum(@PathVariable Long id) {
-        boolean deleted = rhumService.deleteRhum(id);
-        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+        rhumService.deleteRhum(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/origin/{origin}")
-    public List<Rhum> getRhumsByOrigin(@PathVariable String origin) {
+    public List<RhumDto> getRhumsByOrigin(@PathVariable String origin) {
         return rhumService.getRhumsByOrigin(origin);
     }
 
     @GetMapping("/search")
-    public List<Rhum> searchRhumsByName(@RequestParam String keyword) {
+    public List<RhumDto> searchRhumsByName(@RequestParam String keyword) {
         return rhumService.searchRhumsByName(keyword);
     }
 }

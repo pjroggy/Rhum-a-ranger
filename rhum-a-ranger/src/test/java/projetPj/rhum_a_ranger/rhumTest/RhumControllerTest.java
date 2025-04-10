@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import projetPj.rhum_a_ranger.TestSecurityConfig;
 import projetPj.rhum_a_ranger.rhum.Rhum;
 import projetPj.rhum_a_ranger.rhum.RhumController;
+import projetPj.rhum_a_ranger.rhum.RhumDto;
 import projetPj.rhum_a_ranger.rhum.RhumService;
 
 import java.util.Arrays;
@@ -26,7 +27,6 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -50,41 +50,45 @@ public class RhumControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private RhumService rhumService; // Injecté depuis TestConfig
+    private RhumService rhumService;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    private Rhum rhum1;
-    private Rhum rhum2;
+    private RhumDto rhum1;
+    private RhumDto rhum2;
 
     @BeforeEach
     void setUp() {
         // Réinitialiser les mocks avant chaque test
         Mockito.reset(rhumService);
 
-        rhum1 = new Rhum();
-        rhum1.setId(1L);
-        rhum1.setName("Clement");
-        rhum1.setOrigin("Martinique");
-        rhum1.setDescription("Rhum agricole");
-        rhum1.setAlcoholDegree("40");
-        rhum1.setAge(2018);
+        rhum1 = new RhumDto(
+                1L,
+                "Clement",
+                "Martinique",
+                "Rhum agricole",
+                null,
+                2018,
+                "40"
+        );
 
-        rhum2 = new Rhum();
-        rhum2.setId(2L);
-        rhum2.setName("Diplomatico");
-        rhum2.setOrigin("Venezuela");
-        rhum2.setDescription("Rhum traditionnel");
-        rhum2.setAlcoholDegree("43");
-        rhum2.setAge(2010);
+        rhum2 = new RhumDto(
+                2L,
+                "Diplomatico",
+                "Venezuela",
+                "Rhum traditionnel",
+                null,
+                2010,
+                "43"
+        );
     }
 
     @Test
     @WithMockUser(roles = "USER")
     @DisplayName("GET /api/rhums - Devrait retourner tous les rhums")
     void getAllRhums_shouldReturnAllRhums() throws Exception {
-        List<Rhum> rhums = Arrays.asList(rhum1, rhum2);
+        List<RhumDto> rhums = Arrays.asList(rhum1, rhum2);
         when(rhumService.getAllRhums()).thenReturn(rhums);
 
         mockMvc.perform(get("/api/rhums"))
@@ -129,7 +133,7 @@ public class RhumControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void createRhum_shouldCreateRhum() throws Exception {
-        when(rhumService.saveRhum(any(Rhum.class))).thenReturn(rhum1);
+        when(rhumService.saveRhum(any(RhumDto.class))).thenReturn(rhum1);
 
         mockMvc.perform(post("/api/rhums")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -138,42 +142,41 @@ public class RhumControllerTest {
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.name", is("Clement")));
 
-        verify(rhumService, times(1)).saveRhum(any(Rhum.class));
+        verify(rhumService, times(1)).saveRhum(any(RhumDto.class));
     }
 
     @Test
     @WithMockUser(roles = "USER")
     void updateRhum_shouldUpdateRhum_whenRhumExists() throws Exception {
-        when(rhumService.updateRhum(eq(1L), any(Rhum.class))).thenReturn(rhum1);
+        when(rhumService.updateRhum(eq(1L), any(RhumDto.class))).thenReturn(rhum1);
 
         mockMvc.perform(put("/api/rhums/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rhum1)))
-                        
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(1)))
                 .andExpect(jsonPath("$.name", is("Clement")));
 
-        verify(rhumService, times(1)).updateRhum(eq(1L), any(Rhum.class));
+        verify(rhumService, times(1)).updateRhum(eq(1L), any(RhumDto.class));
     }
 
     @Test
     @WithMockUser(roles = "USER")
     void updateRhum_shouldReturn404_whenRhumDoesNotExist() throws Exception {
-        when(rhumService.updateRhum(eq(99L), any(Rhum.class))).thenReturn(null);
+        when(rhumService.updateRhum(eq(99L), any(RhumDto.class))).thenReturn(null);
 
         mockMvc.perform(put("/api/rhums/{id}", 99L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(rhum1)))
                 .andExpect(status().isNotFound());
 
-        verify(rhumService, times(1)).updateRhum(eq(99L), any(Rhum.class));
+        verify(rhumService, times(1)).updateRhum(eq(99L), any(RhumDto.class));
     }
 
     @Test
     @WithMockUser(roles = "USER")
     void deleteRhum_shouldDeleteRhum() throws Exception {
-        when(rhumService.deleteRhum(anyLong())).thenReturn(true);
+        doNothing().when(rhumService).deleteRhum(1L);
 
         mockMvc.perform(delete("/api/rhums/{id}", 1L))
                 .andExpect(status().isNoContent());
@@ -184,7 +187,7 @@ public class RhumControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void getRhumsByOrigin_shouldReturnRhumsByOrigin() throws Exception {
-        List<Rhum> martinique = Arrays.asList(rhum1);
+        List<RhumDto> martinique = Arrays.asList(rhum1);
         when(rhumService.getRhumsByOrigin("Martinique")).thenReturn(martinique);
 
         mockMvc.perform(get("/api/rhums/origin/{origin}", "Martinique"))
@@ -198,7 +201,7 @@ public class RhumControllerTest {
     @Test
     @WithMockUser(roles = "USER")
     void searchRhumsByName_shouldReturnRhumsByNameContaining() throws Exception {
-        List<Rhum> diplomaticoRhums = Arrays.asList(rhum2);
+        List<RhumDto> diplomaticoRhums = Arrays.asList(rhum2);
         when(rhumService.searchRhumsByName("Diplo")).thenReturn(diplomaticoRhums);
 
         mockMvc.perform(get("/api/rhums/search").param("keyword", "Diplo"))
