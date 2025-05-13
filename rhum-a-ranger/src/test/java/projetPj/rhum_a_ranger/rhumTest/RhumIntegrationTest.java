@@ -13,6 +13,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import projetPj.rhum_a_ranger.config.H2TestConfig;
 import projetPj.rhum_a_ranger.rhum.Rhum;
 
 import static org.hamcrest.Matchers.*;
@@ -24,13 +25,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @Import(H2TestConfig.class)
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb",
+        "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1",
         "spring.datasource.driverClassName=org.h2.Driver",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
         "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+        "spring.jpa.properties.hibernate.format_sql=true",
         "spring.jpa.properties.hibernate.globally_quoted_identifiers=true",
-        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration"  // Désactiver Spring Security
+        "spring.jpa.show-sql=true"
 })
 @Transactional
 public class RhumIntegrationTest {
@@ -154,6 +155,12 @@ public class RhumIntegrationTest {
     }
 
     @Test
+    public void testDeleteRhumNotFound() throws Exception {
+        mockMvc.perform(delete("/api/rhums/{id}", 9999L))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     public void testSearchRhumByOrigin() throws Exception {
         // D'abord créer un rhum via l'API
         Long rhumId = createRhumViaApi();
@@ -193,12 +200,6 @@ public class RhumIntegrationTest {
     @Test
     public void testGetRhumNotFound() throws Exception {
         mockMvc.perform(get("/api/rhums/{id}", 9999L))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    public void testDeleteRhumNotFound() throws Exception {
-        mockMvc.perform(delete("/api/rhums/{id}", 9999L))
                 .andExpect(status().isNotFound());
     }
 

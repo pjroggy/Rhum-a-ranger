@@ -1,5 +1,6 @@
 package projetPj.rhum_a_ranger.rhumTest;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,8 +18,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -97,12 +99,25 @@ public class RhumServiceTest {
     }
 
     @Test
-    void deleteRhum_shouldDeleteRhum() {
-        doNothing().when(rhumRepository).deleteById(anyLong());
+    void deleteRhum_shouldDeleteExistingRhum() {
+        Long id = 1L;
+        when(rhumRepository.existsById(id)).thenReturn(true);
+        doNothing().when(rhumRepository).deleteById(id);
 
-        rhumService.deleteRhum(1L);
+        rhumService.deleteRhum(id);
 
-        verify(rhumRepository, times(1)).deleteById(1L);
+        verify(rhumRepository).existsById(id);
+        verify(rhumRepository).deleteById(id);
+    }
+
+    @Test
+    void deleteRhum_shouldThrowExceptionForNonExistingRhum() {
+        Long id = 999L;
+        when(rhumRepository.existsById(id)).thenReturn(false);
+
+        assertThrows(EntityNotFoundException.class, () -> rhumService.deleteRhum(id));
+        verify(rhumRepository).existsById(id);
+        verify(rhumRepository, never()).deleteById(id);
     }
 
     @Test
@@ -152,12 +167,13 @@ public class RhumServiceTest {
     }
 
     @Test
-    void updateRhum_shouldReturnNull_whenRhumDoesNotExist() {
+    void updateRhum_shouldThrowException_whenRhumDoesNotExist() {
         when(rhumRepository.findById(99L)).thenReturn(Optional.empty());
 
-        RhumDto result = rhumService.updateRhum(99L, RhumMapper.toDto(rhum1));
+        assertThatThrownBy(() -> rhumService.updateRhum(99L, RhumMapper.toDto(rhum1)))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Rhum not found");
 
-        assertThat(result).isNull();
         verify(rhumRepository, times(1)).findById(99L);
         verify(rhumRepository, never()).save(any(Rhum.class));
     }

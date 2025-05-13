@@ -1,4 +1,4 @@
-package projetPj.rhum_a_ranger.rhumTest;
+package projetPj.rhum_a_ranger.config;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.boot.test.context.TestConfiguration;

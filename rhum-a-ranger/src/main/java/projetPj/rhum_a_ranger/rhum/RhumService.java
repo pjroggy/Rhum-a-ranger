@@ -1,5 +1,6 @@
 package projetPj.rhum_a_ranger.rhum;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +33,9 @@ public class RhumService {
     }
 
     public void deleteRhum(Long id) {
+        if (!rhumRepository.existsById(id)) {
+            throw new EntityNotFoundException("Rhum not found with id: " + id);
+        }
         rhumRepository.deleteById(id);
     }
 

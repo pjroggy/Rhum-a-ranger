@@ -1,11 +1,11 @@
 package projetPj.rhum_a_ranger.rhum;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/rhums")
@@ -44,8 +44,12 @@ public class RhumController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRhum(@PathVariable Long id) {
-        rhumService.deleteRhum(id);
-        return ResponseEntity.noContent().build();
+        try {
+            rhumService.deleteRhum(id);
+            return ResponseEntity.noContent().build();
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/origin/{origin}")

@@ -1,6 +1,7 @@
 package projetPj.rhum_a_ranger.rhumTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,10 +14,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
-import projetPj.rhum_a_ranger.TestSecurityConfig;
-import projetPj.rhum_a_ranger.rhum.Rhum;
+import projetPj.rhum_a_ranger.config.TestSecurityConfig;
 import projetPj.rhum_a_ranger.rhum.RhumController;
 import projetPj.rhum_a_ranger.rhum.RhumDto;
 import projetPj.rhum_a_ranger.rhum.RhumService;
@@ -34,10 +36,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(RhumController.class)
 @Import(TestSecurityConfig.class)
 @AutoConfigureMockMvc
-@WithMockUser
+@ActiveProfiles("test")
 public class RhumControllerTest {
 
-    // Configuration de test pour remplacer @MockBean
     @TestConfiguration
     static class TestConfig {
         @Bean
@@ -60,7 +61,6 @@ public class RhumControllerTest {
 
     @BeforeEach
     void setUp() {
-        // Réinitialiser les mocks avant chaque test
         Mockito.reset(rhumService);
 
         rhum1 = new RhumDto(
@@ -85,13 +85,13 @@ public class RhumControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     @DisplayName("GET /api/rhums - Devrait retourner tous les rhums")
     void getAllRhums_shouldReturnAllRhums() throws Exception {
         List<RhumDto> rhums = Arrays.asList(rhum1, rhum2);
         when(rhumService.getAllRhums()).thenReturn(rhums);
 
-        mockMvc.perform(get("/api/rhums"))
+        mockMvc.perform(get("/api/rhums")
+                        .with(SecurityMockMvcRequestPostProcessors.user("user")))
                 .andDo(MockMvcResultHandlers.print()) // Afficher les détails de la réponse
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
@@ -120,7 +120,6 @@ public class RhumControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void getRhumById_shouldReturn404_whenRhumDoesNotExist() throws Exception {
         when(rhumService.getRhumById(99L)).thenReturn(Optional.empty());
 
@@ -131,7 +130,6 @@ public class RhumControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void createRhum_shouldCreateRhum() throws Exception {
         when(rhumService.saveRhum(any(RhumDto.class))).thenReturn(rhum1);
 
@@ -146,7 +144,6 @@ public class RhumControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void updateRhum_shouldUpdateRhum_whenRhumExists() throws Exception {
         when(rhumService.updateRhum(eq(1L), any(RhumDto.class))).thenReturn(rhum1);
 
@@ -161,9 +158,8 @@ public class RhumControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void updateRhum_shouldReturn404_whenRhumDoesNotExist() throws Exception {
-        when(rhumService.updateRhum(eq(99L), any(RhumDto.class))).thenReturn(null);
+        when(rhumService.updateRhum(eq(99L), any(RhumDto.class))).thenThrow(new RuntimeException("Rhum not found"));
 
         mockMvc.perform(put("/api/rhums/{id}", 99L)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -174,7 +170,6 @@ public class RhumControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void deleteRhum_shouldDeleteRhum() throws Exception {
         doNothing().when(rhumService).deleteRhum(1L);
 
@@ -185,7 +180,32 @@ public class RhumControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
+    void deleteRhum_shouldReturnNoContentForExistingRhum() throws Exception {
+        // Arrange
+        Long id = 1L;
+        doNothing().when(rhumService).deleteRhum(id);
+
+        // Act & Assert
+        mockMvc.perform(delete("/api/rhums/{id}", id))
+                .andExpect(status().isNoContent());
+
+        verify(rhumService).deleteRhum(id);
+    }
+
+    @Test
+    void deleteRhum_shouldReturnNotFoundForNonExistingRhum() throws Exception {
+        // Arrange
+        Long id = 999L;
+        doThrow(new EntityNotFoundException("Rhum not found")).when(rhumService).deleteRhum(id);
+
+        // Act & Assert
+        mockMvc.perform(delete("/api/rhums/{id}", id))
+                .andExpect(status().isNotFound());
+
+        verify(rhumService).deleteRhum(id);
+    }
+
+    @Test
     void getRhumsByOrigin_shouldReturnRhumsByOrigin() throws Exception {
         List<RhumDto> martinique = Arrays.asList(rhum1);
         when(rhumService.getRhumsByOrigin("Martinique")).thenReturn(martinique);
@@ -199,7 +219,6 @@ public class RhumControllerTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void searchRhumsByName_shouldReturnRhumsByNameContaining() throws Exception {
         List<RhumDto> diplomaticoRhums = Arrays.asList(rhum2);
         when(rhumService.searchRhumsByName("Diplo")).thenReturn(diplomaticoRhums);
