@@ -1,10 +1,12 @@
 package projetPj.rhum_a_ranger.rhum;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -12,41 +14,56 @@ public class RhumService {
 
     private final RhumRepository rhumRepository;
 
-    public List<Rhum> getAllRhums() {
-        return rhumRepository.findAll();
+    public List<RhumDto> getAllRhums() {
+        return rhumRepository.findAll()
+                .stream()
+                .map(RhumMapper::toDto)
+                .collect(Collectors.toList());
     }
 
-    public Optional<Rhum> getRhumById(Long id) {
-        return rhumRepository.findById(id);
+    public Optional<RhumDto> getRhumById(Long id) {
+        return rhumRepository.findById(id)
+                .map(RhumMapper::toDto);
     }
 
-    public Rhum saveRhum(Rhum rhum) {
-        return rhumRepository.save(rhum);
+    public RhumDto saveRhum(RhumDto rhumDto) {
+        Rhum rhum = RhumMapper.toEntity(rhumDto);
+        Rhum saved = rhumRepository.save(rhum);
+        return RhumMapper.toDto(saved);
     }
 
     public void deleteRhum(Long id) {
+        if (!rhumRepository.existsById(id)) {
+            throw new EntityNotFoundException("Rhum not found with id: " + id);
+        }
         rhumRepository.deleteById(id);
     }
 
-    public List<Rhum> getRhumsByOrigin(String origin) {
-        return rhumRepository.findByOrigin(origin);
+    public List<RhumDto> getRhumsByOrigin(String origin) {
+        return rhumRepository.findByOrigin(origin)
+                .stream()
+                .map(RhumMapper::toDto)
+                .collect(Collectors.toList());
     }
 
-    public List<Rhum> searchRhumsByName(String keyword) {
-        return rhumRepository.findByNameContainingIgnoreCase(keyword);
+    public List<RhumDto> searchRhumsByName(String keyword) {
+        return rhumRepository.findByNameContainingIgnoreCase(keyword)
+                .stream()
+                .map(RhumMapper::toDto)
+                .collect(Collectors.toList());
     }
 
-    public Rhum updateRhum(Long id, Rhum rhumDetails) {
+    public RhumDto updateRhum(Long id, RhumDto rhumDto) {
         return rhumRepository.findById(id)
-                .map(existingRhum -> {
-                    existingRhum.setName(rhumDetails.getName());
-                    existingRhum.setOrigin(rhumDetails.getOrigin());
-                    existingRhum.setDescription(rhumDetails.getDescription());
-                    existingRhum.setPicture(rhumDetails.getPicture());
-                    existingRhum.setYear(rhumDetails.getYear());
-                    existingRhum.setAlcoholDegree(rhumDetails.getAlcoholDegree());
-                    return rhumRepository.save(existingRhum);
+                .map(existing -> {
+                    existing.setName(rhumDto.name());
+                    existing.setOrigin(rhumDto.origin());
+                    existing.setDescription(rhumDto.description());
+                    existing.setPicture(rhumDto.picture());
+                    existing.setAge(rhumDto.age());
+                    existing.setAlcoholDegree(rhumDto.alcoholDegree());
+                    return RhumMapper.toDto(rhumRepository.save(existing));
                 })
-                .orElse(null); // Retourne null si le rhum n'est pas trouvé
+                .orElseThrow(() -> new RuntimeException("Rhum not found"));
     }
 }

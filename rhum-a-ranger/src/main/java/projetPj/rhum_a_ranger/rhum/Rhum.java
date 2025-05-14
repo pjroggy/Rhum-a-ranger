@@ -28,7 +28,7 @@ public class Rhum {
 
     private String picture;
 
-    private Integer year;
+    private Integer age;
 
     private String alcoholDegree;
 }
