@@ -29,7 +29,7 @@ public class RecetteService {
     }
 
     public Optional<RecetteDto> findById(Long id) {
-        return recetteRepository.findByIdWithDetails(id)
+        return recetteRepository.findById(id)
                 .map(recetteMapper::toDto);
     }
 
@@ -40,11 +40,38 @@ public class RecetteService {
                 .toList();
     }
 
+    public List<RecetteDto> findByIngredientName(String ingredientName) {
+        return recetteRepository.findByIngredientNameContainingIgnoreCase(ingredientName)
+                .stream()
+                .map(recetteMapper::toDto)
+                .toList();
+    }
+
+    public List<RecetteDto> findByRhumName(String rhumName) {
+        return recetteRepository.findByRhumNameContainingIgnoreCase(rhumName)
+                .stream()
+                .map(recetteMapper::toDto)
+                .toList();
+    }
+
+    public List<RecetteDto> findByIngredientId(Long ingredientId) {
+        return recetteRepository.findByIngredientId(ingredientId)
+                .stream()
+                .map(recetteMapper::toDto)
+                .toList();
+    }
+
+    public List<RecetteDto> findByRhumId(Long rhumId) {
+        return recetteRepository.findByRhumId(rhumId)
+                .stream()
+                .map(recetteMapper::toDto)
+                .toList();
+    }
+
     @Transactional
     public RecetteDto save(RecetteDto recetteDto) {
         Recette recette = recetteMapper.toEntity(recetteDto);
 
-        // Gérer le rhum
         if (recetteDto.rhum() != null) {
             Rhum rhum = rhumRepository.findById(recetteDto.rhum().rhum().id())
                     .orElseThrow(() -> new RuntimeException("Rhum non trouvé"));
@@ -58,7 +85,6 @@ public class RecetteService {
             recette.setRecetteRhum(recetteRhum);
         }
 
-        // Gérer les ingrédients
         if (recetteDto.ingredients() != null) {
             for (var ingredientDto : recetteDto.ingredients()) {
                 Ingredient ingredient = ingredientRepository.findById(ingredientDto.ingredient().id())
@@ -92,7 +118,6 @@ public class RecetteService {
                                     Recette.RecetteDifficulty.valueOf(recetteDto.difficulty()) : null
                     );
 
-                    // Mise à jour du rhum
                     if (recetteDto.rhum() != null) {
                         Rhum rhum = rhumRepository.findById(recetteDto.rhum().rhum().id())
                                 .orElseThrow(() -> new RuntimeException("Rhum non trouvé"));
@@ -111,7 +136,6 @@ public class RecetteService {
                         }
                     }
 
-                    // Mise à jour des ingrédients (remplace tout)
                     existingRecette.getRecetteIngredients().clear();
                     if (recetteDto.ingredients() != null) {
                         for (var ingredientDto : recetteDto.ingredients()) {
